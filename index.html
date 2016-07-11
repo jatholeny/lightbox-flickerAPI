@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        #lightBoxBg{
+            position:absolute;  top:0px;  left:0px;  opacity:0.5;  display:none;  background-color: #000000;  height:100%;
+            width:100%;
+        }
+        #lightbox{
+            position: absolute;  top:10%;  left:20%;
+        }
+        #left{
+            position: absolute;  top:45%;  left:-20%;height:50px;
+        }
+        #right{
+            position: absolute;  top:45%;  right:-20%;height:50px;
+        }
+        #left:hover,#right:hover{
+            background-color: azure;  border: 1px solid black;  border-radius: 50%;
+        }
+        #curimg:hover{
+            background-color: azure;  border: 1px solid azure;
+        }
+    </style>
+</head>
+<body>
+    <div id="lightBoxBg" onclick="dismiss()"></div>
+    <div>
+        <div id="lightbox"></div>
+    </div>
+    <input type="text" id="search">Search!</input>
+</body>
+<script>
+
+window.flickr = {
+    apikey : "7dda2d8ce83101296631e7870691113f",
+    secret:"9c02f68faa4cef2f",
+
+    ajaxcall: function(tag,callback){
+        var endpoint =  "https://api.flickr.com/services/rest/" +
+                "?method=flickr.photos.search&api_key="+this.apikey+"&text="+tag+"&per_page=10&page=1&format=json" +
+                "&nojsoncallback=1";
+        this.getJSON( endpoint, callback );
+    },
+    getJSON: function( url, callback ) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('get', url);
+        xhr.addEventListener('readystatechange', function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var obj = JSON.parse(xhr.responseText);
+                    callback(obj);
+                } else {
+                    console.log('something went wrong!');
+                }
+            }
+        });
+        xhr.send();
+    },
+    photos:[],
+    index:0,
+    getSRC:function(farm,server,id,secret){
+        return "https://farm"+farm+".staticflickr.com/"+server +
+        "/"+id+"_"+secret+"_z.jpg";
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById("search").addEventListener('keydown',function(event){
+        if(event.keyCode==13){
+            flickr.ajaxcall(this.value,function( response ) {
+                var lightbox = document.getElementById( 'lightbox');
+                lightbox.innerHTML="";
+                var photos = response.photos.photo;
+                flickr.photos=photos;
+                console.log(flickr.photos);
+                var firstimg = document.createElement("img");
+                firstimg.src= flickr.getSRC(photos[0].farm,photos[0].server,photos[0].id,photos[0].secret);
+                firstimg.id = "curimg";
+                lightbox.appendChild(firstimg);
+                lightbox.addEventListener('click',startlightbox);
+
+            });
+        }
+    });
+})
+
+    function startlightbox(){
+        var lbBg = document.getElementById("lightBoxBg");
+        lbBg.style.display = "block";
+        this.style.display = "block";
+
+        var curimg = document.getElementById("curimg");
+        if(curimg!=null){
+            if(document.getElementById("left")==null){
+                var left = document.createElement("div");
+                left.id="left";
+                this.appendChild(left);
+                var prev = document.createElement("img");
+                prev.src = "https://cdn0.iconfinder.com/data/icons/cosmo-player/40/button_backward_1-512.png";
+                prev.height=50;
+                prev.width=50;
+                left.appendChild(prev);
+                left.addEventListener('click',function(){
+                    if(flickr.index==0){
+                        flickr.index = flickr.photos.length-1;
+                    }else{
+                        flickr.index--;
+                    }
+                    curimg.src = flickr.getSRC(flickr.photos[flickr.index].farm,
+                            flickr.photos[flickr.index].server,
+                            flickr.photos[flickr.index].id,
+                            flickr.photos[flickr.index].secret);
+                });
+            }
+            if(document.getElementById("right")==null){
+                var right = document.createElement("div");
+                right.id="right";
+                this.appendChild(right);
+                var next = document.createElement("img");
+                next.src = "https://cdn0.iconfinder.com/data/icons/music-sets/500/207-512.png";
+                next.height=50;
+                next.width=50;
+                right.appendChild(next);
+                right.addEventListener('click',function(){
+                    if(flickr.index==flickr.photos.length-1){
+                        flickr.index = 0;
+                    }else{
+                        flickr.index++;
+                    }
+                    curimg.src = flickr.getSRC(flickr.photos[flickr.index].farm,
+                            flickr.photos[flickr.index].server,
+                            flickr.photos[flickr.index].id,
+                            flickr.photos[flickr.index].secret);
+                });
+            }
+        }
+    }
+
+    function dismiss(){
+        var lbBg = document.getElementById("lightBoxBg");
+        lbBg.style.display = "none";
+        var left = document.getElementById("left");
+        left.parentNode.removeChild(left);
+        var right = document.getElementById("right");
+        right.parentNode.removeChild(right);
+
+    }
+
+</script>
+</html>
